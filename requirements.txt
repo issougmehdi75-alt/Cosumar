@@ -12,3 +12,4 @@ optuna
 openpyxl
 jupyter
 nbformat
+plotly
