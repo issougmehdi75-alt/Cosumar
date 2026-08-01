@@ -72,29 +72,24 @@ html, body, [class*="css"] {{
     -webkit-text-fill-color: {TEXT} !important;
     opacity: 1 !important;
 }}
-/* Le champ ferme du selectbox (valeur choisie) a un fond blanc : le texte
-   doit rester NOIR ici, meme dans la sidebar ou tout le reste est blanc.
-   On cible uniquement le conteneur baseweb (pas le label !) et on force
-   aussi -webkit-text-fill-color, car certains navigateurs l'utilisent a
-   la place de "color" pour les elements de formulaire en mode sombre. */
-section[data-testid="stSidebar"] [data-testid="stSelectbox"] {{
-    background-color: transparent !important;
-}}
+/* Le champ ferme du selectbox (valeur choisie, ex: "SUTA") a un fond
+   clair : le texte doit rester NOIR ici. On booste artificiellement la
+   specificite avec ":not(#____jamais____)" (astuce CSS classique) pour
+   etre certain de gagner face au CSS interne de Streamlit, quel que soit
+   son ordre d'injection — les tentatives precedentes perdaient ce
+   conflit de specificite/ordre. */
 section[data-testid="stSidebar"] [data-testid="stSelectbox"] div[data-baseweb="select"] {{
     background-color: #ffffff !important;
     border-radius: 8px !important;
 }}
-section[data-testid="stSidebar"] [data-testid="stSelectbox"] div[data-baseweb="select"] *,
-section[data-testid="stSidebar"] div[data-testid="stSelectbox"] div[data-baseweb="select"] div,
-section[data-testid="stSidebar"] div[data-testid="stSelectbox"] div[data-baseweb="select"] span,
-section[data-testid="stSidebar"] div[data-testid="stSelectbox"][data-testid="stSelectbox"] div[data-baseweb="select"][data-baseweb="select"] * {{
+section[data-testid="stSidebar"] [data-testid="stSelectbox"] div[data-baseweb="select"] *:not(#____jamais____) {{
     color: {TEXT} !important;
     -webkit-text-fill-color: {TEXT} !important;
     opacity: 1 !important;
 }}
-/* Titre du selectbox ("Société a analyser") : blanc, plus grand et bien visible */
-section[data-testid="stSidebar"] [data-testid="stSelectbox"] label,
-section[data-testid="stSidebar"] [data-testid="stWidgetLabel"] p {{
+/* Titre du selectbox ("Société a analyser") : reste blanc, plus grand */
+section[data-testid="stSidebar"] [data-testid="stSelectbox"] label:not(#____jamais____),
+section[data-testid="stSidebar"] [data-testid="stWidgetLabel"] p:not(#____jamais____) {{
     color: #ffffff !important;
     -webkit-text-fill-color: #ffffff !important;
     font-size: 1.15rem !important;
@@ -387,17 +382,6 @@ with st.sidebar:
         index=societe_options.index("GROUPE (toutes societes)") if "GROUPE (toutes societes)" in societe_options else 0,
         help="Choisissez une entité du groupe, ou 'GROUPE' pour la vision consolidée des 4 sociétés.",
     )
-    # Filet de securite : injecte en dernier, ce style gagne tout conflit
-    # avec le CSS interne de Streamlit sur la couleur du choix affiche.
-    st.markdown(f"""
-<style>
-section[data-testid="stSidebar"] div[data-testid="stSelectbox"] div[data-baseweb="select"] div,
-section[data-testid="stSidebar"] div[data-testid="stSelectbox"] div[data-baseweb="select"] span {{
-    color: {TEXT} !important;
-    -webkit-text-fill-color: {TEXT} !important;
-}}
-</style>
-""", unsafe_allow_html=True)
 
     st.markdown("")
     st.markdown("**Horizon de prévision**")
