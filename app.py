@@ -69,15 +69,25 @@ html, body, [class*="css"] {{
 }}
 [data-baseweb="popover"] *, [data-baseweb="menu"] * {{
     color: {TEXT} !important;
+    -webkit-text-fill-color: {TEXT} !important;
+    opacity: 1 !important;
 }}
 /* Le champ ferme du selectbox (valeur choisie) a un fond blanc : le texte
-   doit rester NOIR ici, meme dans la sidebar ou tout le reste est blanc */
-section[data-testid="stSidebar"] [data-baseweb="select"] {{
-    background-color: #ffffff !important;
-    border-radius: 8px;
+   doit rester NOIR ici, meme dans la sidebar ou tout le reste est blanc.
+   On cible le conteneur via son data-testid (le plus fiable) et on force
+   aussi -webkit-text-fill-color, car certains navigateurs l'utilisent a
+   la place de "color" pour les elements de formulaire en mode sombre. */
+section[data-testid="stSidebar"] [data-testid="stSelectbox"] {{
+    background-color: transparent !important;
 }}
-section[data-testid="stSidebar"] [data-baseweb="select"] * {{
+section[data-testid="stSidebar"] [data-testid="stSelectbox"] div[data-baseweb="select"] {{
+    background-color: #ffffff !important;
+    border-radius: 8px !important;
+}}
+section[data-testid="stSidebar"] [data-testid="stSelectbox"] * {{
     color: {TEXT} !important;
+    -webkit-text-fill-color: {TEXT} !important;
+    opacity: 1 !important;
 }}
 /* Contenu des expander (ex: "Comment utiliser cet outil ?") dans la sidebar :
    fond fonce translucide + texte blanc, pour ne pas avoir de blanc sur blanc */
