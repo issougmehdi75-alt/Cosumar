@@ -70,6 +70,29 @@ html, body, [class*="css"] {{
 [data-baseweb="popover"] *, [data-baseweb="menu"] * {{
     color: {TEXT} !important;
 }}
+/* Le champ ferme du selectbox (valeur choisie) a un fond blanc : le texte
+   doit rester NOIR ici, meme dans la sidebar ou tout le reste est blanc */
+section[data-testid="stSidebar"] [data-baseweb="select"] {{
+    background-color: #ffffff !important;
+    border-radius: 8px;
+}}
+section[data-testid="stSidebar"] [data-baseweb="select"] * {{
+    color: {TEXT} !important;
+}}
+/* Contenu des expander (ex: "Comment utiliser cet outil ?") dans la sidebar :
+   fond fonce translucide + texte blanc, pour ne pas avoir de blanc sur blanc */
+section[data-testid="stSidebar"] [data-testid="stExpander"] {{
+    background-color: rgba(255,255,255,0.08) !important;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.15);
+}}
+section[data-testid="stSidebar"] [data-testid="stExpander"] * {{
+    color: #ffffff !important;
+}}
+section[data-testid="stSidebar"] [data-testid="stExpander"] code {{
+    background-color: rgba(255,255,255,0.15) !important;
+    color: {GOLD} !important;
+}}
 
 /* Bandeau d'en-tete */
 .cosumar-header {{
@@ -219,6 +242,18 @@ MODEL_LABELS_FR = {
 }
 
 
+import math
+
+
+def months_from_horizon(unit, value):
+    """Convertit un horizon exprime en jours/mois/annees en nombre de mois (granularite du modele)."""
+    if unit == "Jours":
+        return max(1, math.ceil(value / 30.44))
+    if unit == "Années":
+        return max(1, int(value) * 12)
+    return max(1, int(value))
+
+
 def forecast_bundle(bundle, horizon_months):
     """Genere une prevision a horizon_months mois avec le modele serialise dans bundle."""
     ts = bundle["ts"]
@@ -334,17 +369,27 @@ with st.sidebar:
 
     st.markdown("")
     st.markdown("**Horizon de prévision**")
-    horizon_months = st.slider(
-        "Horizon de prévision (mois)",
-        min_value=1,
-        max_value=36,
-        value=6,
-        step=1,
+    horizon_unit = st.radio(
+        "Unité",
+        ["Jours", "Mois", "Années"],
+        index=1,
+        horizontal=True,
         label_visibility="collapsed",
-        help="Faites glisser le curseur pour choisir l'horizon, de 1 mois à 3 ans.",
     )
+
+    if horizon_unit == "Jours":
+        horizon_value = st.slider("Valeur (jours)", min_value=7, max_value=1095, value=180, step=1, label_visibility="collapsed")
+    elif horizon_unit == "Années":
+        horizon_value = st.slider("Valeur (années)", min_value=1, max_value=5, value=1, step=1, label_visibility="collapsed")
+    else:
+        horizon_value = st.slider("Valeur (mois)", min_value=1, max_value=36, value=6, step=1, label_visibility="collapsed")
+
+    horizon_months = months_from_horizon(horizon_unit, horizon_value)
     years_eq = horizon_months / 12
-    st.caption(f"📅 **{horizon_months} mois** (≈ {years_eq:.1f} an{'s' if years_eq >= 2 else ''})")
+    st.caption(
+        f"📅 **{horizon_value} {horizon_unit.lower()}** "
+        f"→ ≈ **{horizon_months} mois** de prévision (≈ {years_eq:.1f} an{'s' if years_eq >= 2 else ''})"
+    )
 
     st.markdown("")
     generate = st.button("🔮 Générer la prévision", use_container_width=True)
@@ -353,7 +398,7 @@ with st.sidebar:
     with st.expander("📖 Comment utiliser cet outil ?"):
         st.markdown("""
 1. **Choisissez une société** dans la liste (ou "GROUPE" pour la vue consolidée).
-2. **Faites glisser le curseur** pour choisir l'horizon souhaité, en mois (jusqu'à 3 ans).
+2. **Choisissez l'unité** (jours, mois ou années) puis **faites glisser le curseur** pour fixer l'horizon souhaité.
 3. Cliquez sur **Générer la prévision**.
 4. Consultez le graphique, les indicateurs clés, et **téléchargez** les chiffres en CSV
    pour les intégrer à vos propres tableaux de bord.
@@ -416,7 +461,7 @@ if generate or True:  # la prevision par defaut s'affiche aussi sans clic (meill
 
     st.markdown('<div class="section-title">Prévision</div>', unsafe_allow_html=True)
 
-    label_horizon = f"{horizon_months} mois" + (f" (≈ {years_eq:.1f} ans)" if horizon_months >= 12 else "")
+    label_horizon = f"{horizon_value} {horizon_unit.lower()}" + (f" (≈ {horizon_months} mois)" if horizon_unit != "Mois" else "")
     st.markdown(f"Prévision demandée : **{label_horizon}** — à partir de {ts.index[-1].strftime('%B %Y')}")
 
     # ---- Graphique ----
