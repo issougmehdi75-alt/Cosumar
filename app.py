@@ -1,13 +1,12 @@
 """
 app.py — Application Streamlit operationnelle pour le groupe COSUMAR.
 Permet a un utilisateur non technique de choisir une societe (ou le Groupe consolide),
-un horizon de prevision (jours / mois / annees) et d'obtenir la prevision du nombre
+un horizon de prevision (en mois, via un curseur) et d'obtenir la prevision du nombre
 d'articles vendus, avec visualisation, tableau de donnees et export CSV.
 
 Lancement : streamlit run app.py
 """
 import json
-import math
 import pickle
 from pathlib import Path
 
@@ -54,116 +53,142 @@ html, body, [class*="css"] {{
     background-color: {BG};
 }}
 
+/* ---- Forcer la visibilite du texte quel que soit le theme systeme
+   (corrige le texte blanc-sur-blanc en mode sombre) ---- */
+.stApp, .stApp p, .stApp span, .stApp label, .stApp li,
+.stApp .stMarkdown, .stApp .stCaption, .stApp h1, .stApp h2, .stApp h3, .stApp h4 {{
+    color: {TEXT} !important;
+}}
+[data-testid="stDataFrame"] * {{
+    color: {TEXT} !important;
+}}
+/* Les menus deroulants (selectbox) sont rendus dans un calque a part :
+   il faut les cibler explicitement pour eviter le texte invisible */
+[data-baseweb="popover"], [data-baseweb="menu"] {{
+    background-color: #ffffff !important;
+}}
+[data-baseweb="popover"] *, [data-baseweb="menu"] * {{
+    color: {TEXT} !important;
+}}
+
 /* Bandeau d'en-tete */
 .cosumar-header {{
-    background: linear-gradient(135deg, {NAVY} 0%, {NAVY_DARK} 100%);
-    padding: 2rem 2.5rem;
-    border-radius: 0 0 18px 18px;
-    margin: -1rem -1rem 2rem -1rem;
-    display: flex;
-    align-items: center;
-    gap: 1.5rem;
-    box-shadow: 0 4px 18px rgba(0,40,90,0.25);
+background: linear-gradient(135deg, {NAVY} 0%, {NAVY_DARK} 100%);
+padding: 2rem 2.5rem;
+border-radius: 0 0 18px 18px;
+margin: -1rem -1rem 2rem -1rem;
+display: flex;
+align-items: center;
+gap: 1.5rem;
+box-shadow: 0 4px 18px rgba(0,40,90,0.25);
 }}
 .cosumar-header img {{
-    height: 68px;
-    border-radius: 6px;
+height: 68px;
+border-radius: 6px;
 }}
 .cosumar-header .title-block h1 {{
-    font-family: 'Playfair Display', serif;
-    font-weight: 800;
-    color: white;
-    font-size: 1.9rem;
-    margin: 0;
-    letter-spacing: 0.3px;
+font-family: 'Playfair Display', serif;
+font-weight: 800;
+color: white !important;
+font-size: 1.9rem;
+margin: 0;
+letter-spacing: 0.3px;
 }}
 .cosumar-header .title-block p {{
-    color: {GOLD};
-    font-family: 'Inter', sans-serif;
-    font-weight: 500;
-    margin: 0.2rem 0 0 0;
-    font-size: 1rem;
+color: {GOLD} !important;
+font-family: 'Inter', sans-serif;
+font-weight: 500;
+margin: 0.2rem 0 0 0;
+font-size: 1rem;
 }}
 
 /* Cartes KPI */
 .kpi-card {{
-    background: white;
-    border-radius: 14px;
-    padding: 1.1rem 1.3rem;
-    border-left: 5px solid {GOLD};
-    box-shadow: 0 2px 10px rgba(0,40,90,0.07);
-    height: 100%;
+background: white;
+border-radius: 14px;
+padding: 1.1rem 1.3rem;
+border-left: 5px solid {GOLD};
+box-shadow: 0 2px 10px rgba(0,40,90,0.07);
+height: 100%;
 }}
 .kpi-card .kpi-label {{
-    font-size: 0.78rem;
-    text-transform: uppercase;
-    letter-spacing: 0.6px;
-    color: #5b6b82;
-    font-weight: 600;
-    margin-bottom: 0.35rem;
+font-size: 0.78rem;
+text-transform: uppercase;
+letter-spacing: 0.6px;
+color: #5b6b82 !important;
+font-weight: 600;
+margin-bottom: 0.35rem;
 }}
 .kpi-card .kpi-value {{
-    font-family: 'Playfair Display', serif;
-    font-size: 1.7rem;
-    font-weight: 700;
-    color: {NAVY};
+font-family: 'Playfair Display', serif;
+font-size: 1.7rem;
+font-weight: 700;
+color: {NAVY} !important;
 }}
 .kpi-card .kpi-sub {{
-    font-size: 0.78rem;
-    color: #8896a8;
-    margin-top: 0.2rem;
+font-size: 0.78rem;
+color: #8896a8 !important;
+margin-top: 0.2rem;
 }}
 
 /* Section titres */
 .section-title {{
-    font-family: 'Playfair Display', serif;
-    font-weight: 700;
-    color: {NAVY};
-    font-size: 1.35rem;
-    margin: 1.6rem 0 0.6rem 0;
-    border-bottom: 3px solid {GOLD};
-    display: inline-block;
-    padding-bottom: 0.2rem;
+font-family: 'Playfair Display', serif;
+font-weight: 700;
+color: {NAVY} !important;
+font-size: 1.35rem;
+margin: 1.6rem 0 0.6rem 0;
+border-bottom: 3px solid {GOLD};
+display: inline-block;
+padding-bottom: 0.2rem;
 }}
 
 /* Sidebar */
 section[data-testid="stSidebar"] {{
-    background: linear-gradient(180deg, {NAVY_DARK} 0%, {NAVY} 100%);
+background: linear-gradient(180deg, {NAVY_DARK} 0%, {NAVY} 100%);
 }}
 section[data-testid="stSidebar"] * {{
-    color: white !important;
+color: white !important;
 }}
 section[data-testid="stSidebar"] .stButton button {{
-    background: {GOLD};
-    color: {NAVY_DARK} !important;
-    font-weight: 700;
-    border: none;
-    border-radius: 8px;
-    padding: 0.6rem 1rem;
-    width: 100%;
-    transition: transform 0.1s ease;
+background: {GOLD};
+color: {NAVY_DARK} !important;
+font-weight: 700;
+border: none;
+border-radius: 8px;
+padding: 0.6rem 1rem;
+width: 100%;
+transition: transform 0.1s ease;
 }}
 section[data-testid="stSidebar"] .stButton button:hover {{
-    transform: translateY(-1px);
-    background: {GOLD_DARK};
+transform: translateY(-1px);
+background: {GOLD_DARK};
+}}
+/* Curseur (slider) : le rendre bien visible sur fond navy */
+section[data-testid="stSidebar"] [data-baseweb="slider"] div[role="slider"] {{
+background-color: {GOLD} !important;
+border-color: {GOLD} !important;
+}}
+section[data-testid="stSidebar"] [data-testid="stTickBar"] {{
+color: white !important;
 }}
 
 /* Badge modele */
 .model-badge {{
-    display: inline-block;
-    background: {GOLD};
-    color: {NAVY_DARK};
-    font-weight: 700;
-    padding: 0.25rem 0.75rem;
-    border-radius: 20px;
-    font-size: 0.85rem;
+display: inline-block;
+background: {GOLD};
+color: {NAVY_DARK} !important;
+font-weight: 700;
+padding: 0.25rem 0.75rem;
+border-radius: 20px;
+font-size: 0.85rem;
 }}
 
 .footer-note {{
-    color: #8896a8;
-    font-size: 0.8rem;
-    margin-top: 2rem;
-    text-align: center;
+color: #8896a8 !important;
+font-size: 0.8rem;
+margin-top: 2rem;
+text-align: center;
 }}
 </style>
 """, unsafe_allow_html=True)
@@ -192,15 +217,6 @@ MODEL_LABELS_FR = {
     "LightGBM": "LightGBM",
     "Naive": "Modèle naïf",
 }
-
-
-def months_from_horizon(unit, value):
-    """Convertit un horizon exprime en jours/mois/annees en nombre de mois (granularite du modele)."""
-    if unit == "Jours":
-        return max(1, math.ceil(value / 30.44))
-    if unit == "Années":
-        return max(1, int(value) * 12)
-    return max(1, int(value))
 
 
 def forecast_bundle(bundle, horizon_months):
@@ -283,14 +299,19 @@ def img_to_base64(path):
         return base64.b64encode(f.read()).decode()
 
 logo_b64 = img_to_base64(LOGO_PATH) if LOGO_PATH.exists() else None
+logo_html = f'<img src="data:image/jpeg;base64,{logo_b64}"/>' if logo_b64 else ""
 
+# NB : le HTML ci-dessous commence en colonne 0 (pas d'indentation) car
+# Streamlit/Markdown interprete un bloc indente de 4 espaces comme du code
+# et l'affiche tel quel au lieu de le rendre — c'est ce qui causait le bug
+# du <div>...</div> affiche en texte brut dans l'application.
 st.markdown(f"""
 <div class="cosumar-header">
-    {'<img src="data:image/jpeg;base64,' + logo_b64 + '"/>' if logo_b64 else ''}
-    <div class="title-block">
-        <h1>Prévision des ventes — Groupe COSUMAR</h1>
-        <p>Outil d'aide à la décision · Prévision du nombre d'articles vendus</p>
-    </div>
+{logo_html}
+<div class="title-block">
+<h1>Prévision des ventes — Groupe COSUMAR</h1>
+<p>Outil d'aide à la décision · Prévision du nombre d'articles vendus</p>
+</div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -313,16 +334,17 @@ with st.sidebar:
 
     st.markdown("")
     st.markdown("**Horizon de prévision**")
-    col_a, col_b = st.columns([1, 1.3])
-    with col_a:
-        horizon_value = st.number_input("Valeur", min_value=1, max_value=120, value=6, step=1, label_visibility="collapsed")
-    with col_b:
-        horizon_unit = st.selectbox("Unité", ["Jours", "Mois", "Années"], index=1, label_visibility="collapsed")
-
-    st.caption(
-        "ℹ️ Le modèle est entraîné sur des données **mensuelles**. Un horizon en jours ou en "
-        "années est automatiquement converti en nombre de mois équivalent (~30,44 jours/mois)."
+    horizon_months = st.slider(
+        "Horizon de prévision (mois)",
+        min_value=1,
+        max_value=36,
+        value=6,
+        step=1,
+        label_visibility="collapsed",
+        help="Faites glisser le curseur pour choisir l'horizon, de 1 mois à 3 ans.",
     )
+    years_eq = horizon_months / 12
+    st.caption(f"📅 **{horizon_months} mois** (≈ {years_eq:.1f} an{'s' if years_eq >= 2 else ''})")
 
     st.markdown("")
     generate = st.button("🔮 Générer la prévision", use_container_width=True)
@@ -331,7 +353,7 @@ with st.sidebar:
     with st.expander("📖 Comment utiliser cet outil ?"):
         st.markdown("""
 1. **Choisissez une société** dans la liste (ou "GROUPE" pour la vue consolidée).
-2. **Indiquez l'horizon** souhaité : une valeur + une unité (jours, mois ou années).
+2. **Faites glisser le curseur** pour choisir l'horizon souhaité, en mois (jusqu'à 3 ans).
 3. Cliquez sur **Générer la prévision**.
 4. Consultez le graphique, les indicateurs clés, et **téléchargez** les chiffres en CSV
    pour les intégrer à vos propres tableaux de bord.
@@ -351,35 +373,41 @@ info = manifest[societe]
 bundle = load_bundle(info["file"])
 ts = bundle["ts"]
 
-horizon_months = months_from_horizon(horizon_unit, horizon_value)
-
 st.markdown('<div class="section-title">Vue d\'ensemble</div>', unsafe_allow_html=True)
 
 c1, c2, c3, c4 = st.columns(4)
 with c1:
-    st.markdown(f"""<div class="kpi-card">
-        <div class="kpi-label">Société</div>
-        <div class="kpi-value" style="font-size:1.3rem">{societe.replace(" (toutes societes)","")}</div>
-        <div class="kpi-sub">Dernières données : {info['last_date']}</div>
-    </div>""", unsafe_allow_html=True)
+    st.markdown(f"""
+<div class="kpi-card">
+<div class="kpi-label">Société</div>
+<div class="kpi-value" style="font-size:1.3rem">{societe.replace(" (toutes societes)","")}</div>
+<div class="kpi-sub">Dernières données : {info['last_date']}</div>
+</div>
+""", unsafe_allow_html=True)
 with c2:
-    st.markdown(f"""<div class="kpi-card">
-        <div class="kpi-label">Modèle retenu</div>
-        <div class="kpi-value" style="font-size:1.2rem">{MODEL_LABELS_FR.get(info['model_type'], info['model_type'])}</div>
-        <div class="kpi-sub">Sélectionné automatiquement (meilleur RMSE)</div>
-    </div>""", unsafe_allow_html=True)
+    st.markdown(f"""
+<div class="kpi-card">
+<div class="kpi-label">Modèle retenu</div>
+<div class="kpi-value" style="font-size:1.2rem">{MODEL_LABELS_FR.get(info['model_type'], info['model_type'])}</div>
+<div class="kpi-sub">Sélectionné automatiquement (meilleur RMSE)</div>
+</div>
+""", unsafe_allow_html=True)
 with c3:
-    st.markdown(f"""<div class="kpi-card">
-        <div class="kpi-label">Précision estimée (MAPE)</div>
-        <div class="kpi-value">{info['mape']:.1f}%</div>
-        <div class="kpi-sub">Erreur moyenne sur données historiques de test</div>
-    </div>""", unsafe_allow_html=True)
+    st.markdown(f"""
+<div class="kpi-card">
+<div class="kpi-label">Précision estimée (MAPE)</div>
+<div class="kpi-value">{info['mape']:.1f}%</div>
+<div class="kpi-sub">Erreur moyenne sur données historiques de test</div>
+</div>
+""", unsafe_allow_html=True)
 with c4:
-    st.markdown(f"""<div class="kpi-card">
-        <div class="kpi-label">Dernier volume observé</div>
-        <div class="kpi-value">{int(ts.iloc[-1]):,}</div>
-        <div class="kpi-sub">Articles — {ts.index[-1].strftime('%B %Y')}</div>
-    </div>""".replace(",", " "), unsafe_allow_html=True)
+    st.markdown(f"""
+<div class="kpi-card">
+<div class="kpi-label">Dernier volume observé</div>
+<div class="kpi-value">{int(ts.iloc[-1]):,}</div>
+<div class="kpi-sub">Articles — {ts.index[-1].strftime('%B %Y')}</div>
+</div>
+""".replace(",", " "), unsafe_allow_html=True)
 
 st.write("")
 
@@ -388,7 +416,7 @@ if generate or True:  # la prevision par defaut s'affiche aussi sans clic (meill
 
     st.markdown('<div class="section-title">Prévision</div>', unsafe_allow_html=True)
 
-    label_horizon = f"{horizon_value} {horizon_unit.lower()}" + (f" (≈ {horizon_months} mois)" if horizon_unit != "Mois" else "")
+    label_horizon = f"{horizon_months} mois" + (f" (≈ {years_eq:.1f} ans)" if horizon_months >= 12 else "")
     st.markdown(f"Prévision demandée : **{label_horizon}** — à partir de {ts.index[-1].strftime('%B %Y')}")
 
     # ---- Graphique ----
@@ -442,12 +470,12 @@ if generate or True:  # la prevision par defaut s'affiche aussi sans clic (meill
             use_container_width=True,
         )
         st.markdown(f"""
-        <div class="kpi-card" style="margin-top:0.8rem">
-            <div class="kpi-label">Total prévu sur la période</div>
-            <div class="kpi-value">{int(mean.sum()):,}</div>
-            <div class="kpi-sub">articles, cumulés sur {horizon_months} mois</div>
-        </div>
-        """.replace(",", " "), unsafe_allow_html=True)
+<div class="kpi-card" style="margin-top:0.8rem">
+<div class="kpi-label">Total prévu sur la période</div>
+<div class="kpi-value">{int(mean.sum()):,}</div>
+<div class="kpi-sub">articles, cumulés sur {horizon_months} mois</div>
+</div>
+""".replace(",", " "), unsafe_allow_html=True)
 
     # ---- Details modele (pour utilisateurs curieux) ----
     with st.expander("🔍 Détail de la comparaison des modèles testés"):
