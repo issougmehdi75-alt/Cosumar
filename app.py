@@ -74,7 +74,7 @@ html, body, [class*="css"] {{
 }}
 /* Le champ ferme du selectbox (valeur choisie) a un fond blanc : le texte
    doit rester NOIR ici, meme dans la sidebar ou tout le reste est blanc.
-   On cible le conteneur via son data-testid (le plus fiable) et on force
+   On cible uniquement le conteneur baseweb (pas le label !) et on force
    aussi -webkit-text-fill-color, car certains navigateurs l'utilisent a
    la place de "color" pour les elements de formulaire en mode sombre. */
 section[data-testid="stSidebar"] [data-testid="stSelectbox"] {{
@@ -84,10 +84,18 @@ section[data-testid="stSidebar"] [data-testid="stSelectbox"] div[data-baseweb="s
     background-color: #ffffff !important;
     border-radius: 8px !important;
 }}
-section[data-testid="stSidebar"] [data-testid="stSelectbox"] * {{
+section[data-testid="stSidebar"] [data-testid="stSelectbox"] div[data-baseweb="select"] * {{
     color: {TEXT} !important;
     -webkit-text-fill-color: {TEXT} !important;
     opacity: 1 !important;
+}}
+/* Titre du selectbox ("Société a analyser") : blanc, plus grand et bien visible */
+section[data-testid="stSidebar"] [data-testid="stSelectbox"] label,
+section[data-testid="stSidebar"] [data-testid="stWidgetLabel"] p {{
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+    font-size: 1.15rem !important;
+    font-weight: 700 !important;
 }}
 /* Contenu des expander (ex: "Comment utiliser cet outil ?") dans la sidebar :
    fond fonce translucide + texte blanc, pour ne pas avoir de blanc sur blanc */
