@@ -84,7 +84,10 @@ section[data-testid="stSidebar"] [data-testid="stSelectbox"] div[data-baseweb="s
     background-color: #ffffff !important;
     border-radius: 8px !important;
 }}
-section[data-testid="stSidebar"] [data-testid="stSelectbox"] div[data-baseweb="select"] * {{
+section[data-testid="stSidebar"] [data-testid="stSelectbox"] div[data-baseweb="select"] *,
+section[data-testid="stSidebar"] div[data-testid="stSelectbox"] div[data-baseweb="select"] div,
+section[data-testid="stSidebar"] div[data-testid="stSelectbox"] div[data-baseweb="select"] span,
+section[data-testid="stSidebar"] div[data-testid="stSelectbox"][data-testid="stSelectbox"] div[data-baseweb="select"][data-baseweb="select"] * {{
     color: {TEXT} !important;
     -webkit-text-fill-color: {TEXT} !important;
     opacity: 1 !important;
@@ -384,6 +387,17 @@ with st.sidebar:
         index=societe_options.index("GROUPE (toutes societes)") if "GROUPE (toutes societes)" in societe_options else 0,
         help="Choisissez une entité du groupe, ou 'GROUPE' pour la vision consolidée des 4 sociétés.",
     )
+    # Filet de securite : injecte en dernier, ce style gagne tout conflit
+    # avec le CSS interne de Streamlit sur la couleur du choix affiche.
+    st.markdown(f"""
+<style>
+section[data-testid="stSidebar"] div[data-testid="stSelectbox"] div[data-baseweb="select"] div,
+section[data-testid="stSidebar"] div[data-testid="stSelectbox"] div[data-baseweb="select"] span {{
+    color: {TEXT} !important;
+    -webkit-text-fill-color: {TEXT} !important;
+}}
+</style>
+""", unsafe_allow_html=True)
 
     st.markdown("")
     st.markdown("**Horizon de prévision**")
